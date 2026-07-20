@@ -1,30 +1,26 @@
+// @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { sql } from "@/lib/db";
 
-// Weekly progress email. Triggered by Vercel Cron (see vercel.json, Fridays 14:00 UTC).
-// Requires SUPABASE_SERVICE_ROLE_KEY + RESEND_API_KEY. Safe no-op if either is missing.
+export const dynamic = "force-dynamic";
+
+// Weekly progress email via Vercel Cron (Fridays, see vercel.json). Safe no-op without RESEND_API_KEY.
 export async function GET(req: NextRequest) {
   if (process.env.CRON_SECRET && req.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`)
     return NextResponse.json({ ok: false }, { status: 401 });
-  const svc = process.env.SUPABASE_SERVICE_ROLE_KEY, rk = process.env.RESEND_API_KEY;
-  if (!svc || !rk) return NextResponse.json({ ok: true, skipped: "missing keys" });
+  const rk = process.env.RESEND_API_KEY;
+  if (!rk) return NextResponse.json({ ok: true, skipped: "no RESEND_API_KEY" });
 
-  const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, svc);
-  const { data: users } = await db.auth.admin.listUsers();
-  const { data: profiles }: any = await db.from("profiles").select("*").eq("wants_reports", true);
-  const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+  const users = await sql`select id, email, name from users where wants_reports`;
   let sent = 0;
-
-  for (const p of (profiles || []) as any[]) {
-    const u = (users?.users as any[])?.find((x: any) => x.id === p.id);
-    if (!u?.email) continue;
-    const { data: at }: any = await db.from("attempts").select("correct").eq("user_id", p.id).gte("created_at", weekAgo);
-    const { data: ex }: any = await db.from("exam_results").select("pct,track,form").eq("user_id", p.id).gte("created_at", weekAgo);
-    const t = at?.length || 0, c = at?.filter((a: any) => a.correct).length || 0;
-    if (t === 0 && !ex?.length) continue; // nothing to report
-    const html = `<div style="font-family:sans-serif;max-width:520px"><h2>Your AnthroTest week</h2>
+  for (const u of users) {
+    const at = await sql`select count(*)::int as t, count(*) filter (where correct)::int as c from attempts where user_id = ${u.id} and created_at > now() - interval '7 days'`;
+    const ex = await sql`select track, form, pct from exam_results where user_id = ${u.id} and created_at > now() - interval '7 days'`;
+    const { t, c } = at[0] || { t: 0, c: 0 };
+    if (!t && !ex.length) continue;
+    const html = `<div style="font-family:sans-serif;max-width:520px"><h2>Your AnthroTest week, ${u.name}</h2>
       <p><b>${t}</b> questions answered · <b>${t ? Math.round((c / t) * 100) : 0}%</b> accuracy</p>
-      ${ex?.length ? `<p>Mock exams: ${ex.map((e: any) => `${e.track === "arch" ? "CCA-F" : "Fundamentals"} Form ${e.form} — <b>${e.pct}%</b>`).join(", ")}</p>` : ""}
+      ${ex.length ? `<p>Mock exams: ${ex.map((e) => `${e.track === "arch" ? "CCA-F" : "Fundamentals"} Form ${e.form} — <b>${e.pct}%</b>`).join(", ")}</p>` : ""}
       <p><a href="https://anthrotest.com/dashboard">Open your dashboard →</a></p>
       <p style="color:#888;font-size:12px">AnthroTest is an independent study resource, not affiliated with Anthropic.</p></div>`;
     await fetch("https://api.resend.com/emails", {

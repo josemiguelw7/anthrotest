@@ -2,8 +2,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
-import { Header, Mono } from "@/components/ui";
+import { Header, Mono, requireUser } from "@/components/ui";
 
 export default function Board() {
   const router = useRouter();
@@ -11,15 +10,12 @@ export default function Board() {
   const [rows, setRows] = useState([]);
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push("/login"); return; }
-      setEmail(user.email);
-      const { data: profs } = await supabase.from("profiles").select("id,name");
-      const { data: ex } = await supabase.from("exam_results").select("user_id,track,pct");
-      const map = {};
-      (profs || []).forEach((p) => (map[p.id] = { name: p.name, arch: null, assoc: null, n: 0 }));
-      (ex || []).forEach((e) => { const r = map[e.user_id]; if (!r) return; r.n++; if (e.pct > (r[e.track] ?? -1)) r[e.track] = e.pct; });
-      setRows(Object.values(map).sort((a, b) => (b.arch ?? -1) - (a.arch ?? -1)));
+      const me = await requireUser(router);
+      if (!me) return;
+      setEmail(me.email);
+      const r = await fetch("/api/board");
+      const d = await r.json();
+      setRows(d.rows || []);
     })();
   }, [router]);
   return (

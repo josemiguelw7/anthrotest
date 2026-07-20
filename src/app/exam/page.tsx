@@ -2,10 +2,9 @@
 "use client";
 import { useEffect, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { TRACKS } from "@/lib/tracks";
-import { Header, Mono } from "@/components/ui";
-import { shuffle, mulberry32, pct, DAY } from "@/lib/helpers";
+import { Header, Mono, requireUser } from "@/components/ui";
+import { shuffle, mulberry32, pct } from "@/lib/helpers";
 
 function ExamInner() {
   const router = useRouter();
@@ -19,7 +18,7 @@ function ExamInner() {
   const timer = useRef(null); const finishRef = useRef(() => {});
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => { if (!user) router.push("/login"); else { setEmail(user.email); setUid(user.id); } });
+    requireUser(router).then((me) => { if (me) { setEmail(me.email); setUid(true); } });
     return () => clearInterval(timer.current);
   }, [router]);
 
@@ -38,17 +37,10 @@ function ExamInner() {
     clearInterval(timer.current);
     const byDom = T.domains.map(() => ({ c: 0, t: 0 }));
     let correct = 0;
-    for (const q of qs) {
-      const ok = ans[q.id] === q.a; byDom[q.d].t++; if (ok) { byDom[q.d].c++; correct++; }
-      await supabase.from("attempts").insert({ user_id: uid, qid: q.id, track, domain: q.d, correct: ok });
-      if (!ok) {
-        const { data: cur } = await supabase.from("srs").select("misses").eq("user_id", uid).eq("qid", q.id).maybeSingle();
-        await supabase.from("srs").upsert({ user_id: uid, qid: q.id, misses: (cur?.misses || 0) + 1, ivl: 1, due: new Date(Date.now() + DAY).toISOString() });
-      }
-    }
+    const answers = qs.map((q) => { const ok = ans[q.id] === q.a; byDom[q.d].t++; if (ok) { byDom[q.d].c++; correct++; } return { qid: q.id, domain: q.d, correct: ok }; });
     const r = { form, score: correct, total: qs.length, pct: pct(correct, qs.length), byDom };
     setResult(r); setPhase("done");
-    await supabase.from("exam_results").insert({ user_id: uid, track, form, score: r.score, total: r.total, pct: r.pct, by_dom: byDom });
+    fetch("/api/exam", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ track, form, score: r.score, total: r.total, pct: r.pct, byDom, answers }) });
   };
   useEffect(() => { finishRef.current = finish; });
 

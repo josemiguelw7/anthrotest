@@ -2,9 +2,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { TRACKS } from "@/lib/tracks";
-import { Header, Mono } from "@/components/ui";
+import { Header, Mono, requireUser } from "@/components/ui";
 
 export default function Study() {
   const router = useRouter();
@@ -14,7 +13,7 @@ export default function Study() {
   const T = TRACKS[track];
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => { if (!user) router.push("/login"); else setEmail(user.email); });
+    requireUser(router).then((me) => { if (me) setEmail(me.email); });
     return () => { try { window.speechSynthesis.cancel(); } catch {} };
   }, [router]);
 

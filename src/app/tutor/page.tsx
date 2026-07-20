@@ -2,14 +2,13 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
-import { Header, Mono } from "@/components/ui";
+import { Header, Mono, requireUser } from "@/components/ui";
 
 export default function TutorPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [msgs, setMsgs] = useState([]); const [input, setInput] = useState(""); const [busy, setBusy] = useState(false);
-  useEffect(() => { supabase.auth.getUser().then(({ data: { user } }) => { if (!user) router.push("/login"); else setEmail(user.email); }); }, [router]);
+  useEffect(() => { requireUser(router).then((me) => { if (me) setEmail(me.email); }); }, [router]);
   const send = async () => {
     if (!input.trim() || busy) return;
     const next = [...msgs, { role: "user", content: input.trim() }];

@@ -2,9 +2,8 @@
 "use client";
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { TRACKS, qById, trackOf } from "@/lib/tracks";
-import { Header, Mono } from "@/components/ui";
+import { Header, Mono, requireUser } from "@/components/ui";
 import { shuffle, pct, DAY } from "@/lib/helpers";
 
 function Tutor({ q, picked }) {
@@ -46,12 +45,13 @@ function PracticeInner() {
 
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push("/login"); return; }
-      setEmail(user.email); setUid(user.id);
+      const me = await requireUser(router);
+      if (!me) return;
+      setEmail(me.email); setUid(true);
       if (mode === "review") {
-        const { data } = await supabase.from("srs").select("qid").eq("user_id", user.id).lte("due", new Date().toISOString());
-        setQueue(shuffle((data || []).map((r) => qById(r.qid)).filter(Boolean)));
+        const r = await fetch("/api/review");
+        const { qids } = await r.json();
+        setQueue(shuffle((qids || []).map((id) => qById(id)).filter(Boolean)));
       }
     })();
   }, [router, mode]);
@@ -63,14 +63,7 @@ function PracticeInner() {
     setPicked(i);
     const q = queue[idx]; const ok = i === q.a; const tr = trackOf(q.id);
     setDone((p) => ({ c: p.c + (ok ? 1 : 0), t: p.t + 1 }));
-    await supabase.from("attempts").insert({ user_id: uid, qid: q.id, track: tr, domain: q.d, correct: ok });
-    const { data: cur } = await supabase.from("srs").select("*").eq("user_id", uid).eq("qid", q.id).maybeSingle();
-    if (!ok) await supabase.from("srs").upsert({ user_id: uid, qid: q.id, misses: (cur?.misses || 0) + 1, ivl: 1, due: new Date(Date.now() + DAY).toISOString() });
-    else if (cur) {
-      const nxt = cur.ivl >= 7 ? null : cur.ivl >= 3 ? 7 : 3;
-      if (nxt) await supabase.from("srs").update({ ivl: nxt, due: new Date(Date.now() + nxt * DAY).toISOString() }).eq("user_id", uid).eq("qid", q.id);
-      else await supabase.from("srs").delete().eq("user_id", uid).eq("qid", q.id);
-    }
+    fetch("/api/attempt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ qid: q.id, track: tr, domain: q.d, correct: ok }) });
   };
 
   if (mode !== "review" && queue === null) return (

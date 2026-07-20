@@ -2,7 +2,6 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 
 export const Mono = ({ children, style = {} }) => <span className="mono" style={style}>{children}</span>;
 
@@ -41,7 +40,7 @@ export function Header({ email }) {
         </Link>
         <div className="flex items-center gap-2">
           {email && <Mono style={{ fontSize: 11, color: "var(--muted)" }}>{email}</Mono>}
-          <button className="btn btn-ghost" style={{ fontSize: 12, padding: "2px 8px" }} onClick={async () => { await supabase.auth.signOut(); router.push("/login"); }}>Sign out</button>
+          <button className="btn btn-ghost" style={{ fontSize: 12, padding: "2px 8px" }} onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/login"); }}>Sign out</button>
         </div>
       </div>
       <div className="flex gap-1 mt-3 flex-wrap">
@@ -53,6 +52,8 @@ export function Header({ email }) {
   );
 }
 
-export function useUser() {
-  return supabase.auth.getUser();
+export async function requireUser(router) {
+  const r = await fetch("/api/me");
+  if (r.status === 401) { router.push("/login"); return null; }
+  return r.json();
 }
