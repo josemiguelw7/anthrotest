@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --paper: #F3F5F2; --card: #FFFFFF; --ink: #17251E;
+  --pine: #1E6B52; --pine-dark: #154C3B;
+  --mark: #FFD34D; --mark-soft: #FFF3C9; --mark-line: #E3B93A;
+  --red: #BE4B33; --red-soft: #F9E4DE; --green-soft: #DCEFE6;
+  --muted: #64726B; --line: #DDE3DD; --blue: #2B5D8A; --blue-soft: #E3EDF5;
+}
+body { background: var(--paper); color: var(--ink); font-family: "Public Sans", system-ui, sans-serif; }
+.display { font-family: "Fraunces", serif; font-weight: 650; }
+.mono { font-family: "JetBrains Mono", monospace; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 0.5rem; padding: 1.25rem; }
+.btn { border-radius: 0.375rem; font-weight: 500; padding: 0.4rem 0.9rem; font-size: 0.875rem; cursor: pointer; }
+.btn-primary { background: var(--pine); color: #fff; border: 1px solid var(--pine-dark); }
+.btn-primary:hover { background: var(--pine-dark); }
+.btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.btn-mark { background: var(--mark); color: var(--ink); border: 1px solid var(--mark-line); }
+.btn-blue { background: var(--blue); color: #fff; border: 1px solid #1F4468; }
+.input { border: 1px solid var(--line); background: var(--paper); border-radius: 0.375rem; padding: 0.5rem 0.75rem; font-size: 0.9rem; width: 100%; }
+button:focus-visible { outline: 2px solid var(--pine); outline-offset: 2px; }
