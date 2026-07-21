@@ -8,12 +8,13 @@ import { Header, Mono, requireUser } from "@/components/ui";
 export default function Study() {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [adminF, setAdminF] = useState(false);
   const [track, setTrack] = useState("arch");
   const [speaking, setSpeaking] = useState(null);
   const T = TRACKS[track];
 
   useEffect(() => {
-    requireUser(router).then((me) => { if (me) setEmail(me.email); });
+    requireUser(router).then((me) => { if (me) { setEmail(me.email); setAdminF(me.admin); } });
     return () => { try { window.speechSynthesis.cancel(); } catch {} };
   }, [router]);
 
@@ -31,7 +32,7 @@ export default function Study() {
 
   return (
     <div>
-      <Header email={email} />
+      <Header email={email} admin={adminF} />
       <div className="flex gap-1 mb-4">
         {Object.entries(TRACKS).map(([k, tr]) => (
           <button key={k} onClick={() => { setTrack(k); try { window.speechSynthesis.cancel(); } catch {}; setSpeaking(null); }} className="btn" style={{ background: track === k ? "var(--ink)" : "transparent", color: track === k ? "#fff" : "var(--muted)", border: `1px solid ${track === k ? "var(--ink)" : "var(--line)"}` }}>{tr.short}</button>

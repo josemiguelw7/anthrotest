@@ -7,19 +7,20 @@ import { Header, Mono, requireUser } from "@/components/ui";
 export default function Board() {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [adminF, setAdminF] = useState(false);
   const [rows, setRows] = useState([]);
   useEffect(() => {
     (async () => {
       const me = await requireUser(router);
       if (!me) return;
-      setEmail(me.email);
+      setEmail(me.email); setAdminF(me.admin);
       const r = await fetch("/api/board");
       const d = await r.json();
       setRows(d.rows || []);
     })();
   }, [router]);
   return (
-    <div><Header email={email} />
+    <div><Header email={email} admin={adminF} />
       <div className="display mb-1" style={{ fontSize: 22 }}>Team board</div>
       <p className="text-sm mb-4" style={{ color: "var(--muted)" }}>Best mock scores per track, visible to everyone with an account.</p>
       <div className="card" style={{ padding: 0 }}>

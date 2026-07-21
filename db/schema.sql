@@ -59,5 +59,18 @@ create table submissions (
   created_at timestamptz not null default now()
 );
 
+create table questions (
+  id text primary key,
+  track text not null,
+  domain int not null,
+  q text not null,
+  opts jsonb not null,
+  a int not null,
+  why text not null,
+  active boolean not null default true,
+  source text,
+  created_at timestamptz not null default now()
+);
+
 -- Make yourself admin after signing up:
 -- update users set is_admin = true where email = 'you@example.com';

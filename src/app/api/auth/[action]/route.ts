@@ -11,9 +11,14 @@ export async function POST(req: NextRequest, { params }: { params: { action: str
 
   try {
     if (params.action === "signup") {
-      const { pw, name } = body;
+      const { pw, name, invite } = body;
       if (!email.includes("@") || !pw || pw.length < 8 || !String(name || "").trim())
         return NextResponse.json({ error: "Valid email, a display name, and a password of 8+ characters are required." }, { status: 400 });
+      const allowed = (process.env.ALLOWED_EMAIL_DOMAINS || "").split(",").map((d) => d.trim().toLowerCase()).filter(Boolean);
+      if (allowed.length && !allowed.some((d) => email.endsWith("@" + d) || email.endsWith("." + d)))
+        return NextResponse.json({ error: "Sign-ups are limited to approved email domains. Ask the admin for access." }, { status: 403 });
+      if (process.env.INVITE_CODE && String(invite || "").trim() !== process.env.INVITE_CODE)
+        return NextResponse.json({ error: "An invite code is required to sign up — ask the admin." }, { status: 403 });
       const exists = await sql`select 1 from users where email = ${email}`;
       if (exists.length) return NextResponse.json({ error: "That email already has an account — sign in instead." }, { status: 409 });
       const hash = await bcrypt.hash(pw, 10);

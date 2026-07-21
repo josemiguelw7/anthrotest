@@ -9,6 +9,7 @@ export async function POST(req: NextRequest) {
   const { qid, track, domain, correct } = await req.json();
   if (typeof qid !== "string" || !["arch", "assoc"].includes(track)) return NextResponse.json({ error: "bad request" }, { status: 400 });
   await sql`insert into attempts (user_id, qid, track, domain, correct) values (${s.uid}, ${qid}, ${track}, ${domain}, ${!!correct})`;
+  if (qid.startsWith("ai_")) return NextResponse.json({ ok: true }); // ephemeral AI questions: stats yes, SRS no
   if (!correct) {
     await sql`insert into srs (user_id, qid, misses, ivl, due) values (${s.uid}, ${qid}, 1, 1, now() + interval '1 day')
       on conflict (user_id, qid) do update set misses = srs.misses + 1, ivl = 1, due = now() + interval '1 day'`;

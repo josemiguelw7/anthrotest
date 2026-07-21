@@ -27,10 +27,11 @@ export function WeightSpine({ domains, per, height = 44 }) {
   );
 }
 
-export function Header({ email }) {
+export function Header({ email, admin }) {
   const path = usePathname();
   const router = useRouter();
-  const tabs = [["/dashboard", "Home"], ["/study", "Study"], ["/practice", "Drill"], ["/exam", "Exam"], ["/tutor", "Tutor"], ["/board", "Board"]];
+  const tabs = [["/dashboard", "Home"], ["/study", "Study"], ["/cards", "Cards"], ["/practice", "Drill"], ["/exam", "Exam"], ["/notebook", "Notebook"], ["/labs", "Labs"], ["/tutor", "Tutor"], ["/board", "Board"]];
+  if (admin) tabs.push(["/admin", "Admin"]);
   return (
     <div className="mb-6 pb-4" style={{ borderBottom: "2px solid var(--ink)" }}>
       <div className="flex items-center justify-between">

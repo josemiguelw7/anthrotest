@@ -68,6 +68,19 @@ export async function GET(req: NextRequest) {
       created_at timestamptz not null default now()
     )`;
 
+    await sql`create table if not exists questions (
+      id text primary key,
+      track text not null,
+      domain int not null,
+      q text not null,
+      opts jsonb not null,
+      a int not null,
+      why text not null,
+      active boolean not null default true,
+      source text,
+      created_at timestamptz not null default now()
+    )`;
+
     let promoted = null;
     const admin = req.nextUrl.searchParams.get("admin");
     if (admin) {

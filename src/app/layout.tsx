@@ -6,7 +6,11 @@ export const metadata: Metadata = {
   description:
     "Practice questions, mock exams, study notes, and an AI tutor for the Claude Certified Architect (CCA-F) exam. Independent study resource.",
   metadataBase: new URL("https://anthrotest.com"),
+  manifest: "/manifest.webmanifest",
+  icons: { icon: "/icon-192.png", apple: "/icon-192.png" },
 };
+
+export const viewport = { themeColor: "#1E6B52" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

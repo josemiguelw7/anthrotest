@@ -53,12 +53,21 @@ Skip this and everything else still works — password resets then fall back to 
 - Auth (signup/login/reset): `src/app/api/auth/[action]/route.ts` + `src/lib/session.ts`
 - DB schema: `db/schema.sql`
 
-## Roadmap ideas (not built yet)
-- Admin UI for the `submissions` table (schema is ready — approving currently means moving the
-  question into `content.js`)
-- Wrong-answer notebook page (SRS data is already collected)
-- Hands-on labs with AI grading (the `/api/tutor` route can grade; needs a page)
-- Readiness score + streaks on the dashboard
+## Feature map
+- **Notebook** (`/notebook`): every missed question, worst-first, one-tap drill.
+- **Labs** (`/labs`): write tool definitions / CLAUDE.md / prompts; AI grades against a rubric.
+- **Flashcards** (`/cards`): tap-through deck from the study notes. Installable as a PWA
+  (Add to Home Screen) via `public/manifest.webmanifest`.
+- **AI drills**: dashboard "AI drill" button generates 5 fresh questions targeting your weakest
+  domain (`/api/generate`); they count toward stats but not spaced repetition.
+- **Readiness verdict**: dashboard blends mock scores + coverage-weighted accuracy and links to
+  Pearson VUE when you look ready. Exam registration itself runs through Anthropic Partner Academy.
+- **Question bank in Postgres**: admins add/edit questions at `/admin` (live instantly, no
+  deploy); anyone can propose via `/submit`; the 85 built-ins stay in `src/lib/data/content.js`.
+- **Access fencing** (optional): set `ALLOWED_EMAIL_DOMAINS` and/or `INVITE_CODE` to close
+  registration to the team. Unset = open sign-ups.
+
+Existing deploys: the `questions` table is auto-created on first use (or re-run `/api/setup?key=...`).
 
 ## Security notes
 - `DATABASE_URL`, `AUTH_SECRET`, and `ANTHROPIC_API_KEY` are **server-only** — never prefix

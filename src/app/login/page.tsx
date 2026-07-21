@@ -10,6 +10,7 @@ function LoginInner() {
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [name, setName] = useState("");
+  const [invite, setInvite] = useState("");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -23,7 +24,7 @@ function LoginInner() {
     try {
       if (mode === "forgot") { const d = await post("forgot", { email }); setMsg(d.note || d.error || "Done."); }
       else if (mode === "reset") { const d = await post("reset", { token: resetToken, pw }); if (d.ok) router.push("/dashboard"); else setMsg(d.error); }
-      else if (mode === "up") { const d = await post("signup", { email, pw, name }); if (d.ok) router.push("/dashboard"); else setMsg(d.error); }
+      else if (mode === "up") { const d = await post("signup", { email, pw, name, invite }); if (d.ok) router.push("/dashboard"); else setMsg(d.error); }
       else { const d = await post("login", { email, pw }); if (d.ok) router.push("/dashboard"); else setMsg(d.error); }
     } catch { setMsg("Something went wrong — try again."); }
     setBusy(false);
@@ -37,7 +38,9 @@ function LoginInner() {
       </p>
       <div className="card">
         {mode === "up" && (<><label className="block text-sm font-medium mb-1">Display name</label>
-          <input className="input mb-3" value={name} onChange={(e) => setName(e.target.value)} placeholder="Jose S." /></>)}
+          <input className="input mb-3" value={name} onChange={(e) => setName(e.target.value)} placeholder="Jose S." />
+          <label className="block text-sm font-medium mb-1">Invite code <span style={{ color: "var(--muted)", fontWeight: 400 }}>(only if the admin set one)</span></label>
+          <input className="input mb-3" value={invite} onChange={(e) => setInvite(e.target.value)} placeholder="" /></>)}
         {mode !== "reset" && (<><label className="block text-sm font-medium mb-1">Email</label>
           <input className="input mb-3" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" /></>)}
         {mode !== "forgot" && (<><label className="block text-sm font-medium mb-1">{mode === "reset" ? "New password" : "Password"} <span style={{ color: "var(--muted)", fontWeight: 400 }}>(8+ characters)</span></label>

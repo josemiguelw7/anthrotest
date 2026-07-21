@@ -2,7 +2,8 @@
 "use client";
 import { useEffect, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { TRACKS } from "@/lib/tracks";
+import { TRACKS, DOMAIN_DOCS } from "@/lib/tracks";
+import { useBanks } from "@/lib/useBanks";
 import { Header, Mono, requireUser } from "@/components/ui";
 import { shuffle, mulberry32, pct } from "@/lib/helpers";
 
@@ -10,7 +11,8 @@ function ExamInner() {
   const router = useRouter();
   const track = useSearchParams().get("track") || "arch";
   const T = TRACKS[track];
-  const [email, setEmail] = useState(""); const [uid, setUid] = useState(null);
+  const [email, setEmail] = useState(""); const [uid, setUid] = useState(null); const [adminF, setAdminF] = useState(false);
+  const banks = useBanks();
   const [phase, setPhase] = useState("pick"); // pick | run | done
   const [form, setForm] = useState("A");
   const [qs, setQs] = useState([]); const [idx, setIdx] = useState(0); const [ans, setAns] = useState({});
@@ -18,15 +20,16 @@ function ExamInner() {
   const timer = useRef(null); const finishRef = useRef(() => {});
 
   useEffect(() => {
-    requireUser(router).then((me) => { if (me) { setEmail(me.email); setUid(true); } });
+    requireUser(router).then((me) => { if (me) { setEmail(me.email); setUid(true); setAdminF(me.admin); } });
     return () => clearInterval(timer.current);
   }, [router]);
 
   const start = (f) => {
     setForm(f);
+    const bank = banks ? banks[track] : T.bank;
     const rnd = f === "R" ? Math.random : mulberry32({ A: 11, B: 22, C: 33 }[f] + (track === "arch" ? 0 : 100));
     let picked = [];
-    T.domains.forEach((_, di) => { picked = picked.concat(shuffle(T.bank.filter((q) => q.d === di), rnd).slice(0, T.exam.counts[di])); });
+    T.domains.forEach((_, di) => { picked = picked.concat(shuffle(bank.filter((q) => q.d === di), rnd).slice(0, T.exam.counts[di])); });
     picked = shuffle(picked, rnd).slice(0, T.exam.n);
     setQs(picked); setIdx(0); setAns({}); setLeft(T.exam.min * 60); setPhase("run");
     clearInterval(timer.current);
@@ -45,7 +48,7 @@ function ExamInner() {
   useEffect(() => { finishRef.current = finish; });
 
   if (phase === "pick") return (
-    <div><Header email={email} />
+    <div><Header email={email} admin={adminF} />
       <div className="display mb-1" style={{ fontSize: 22 }}>Mock exam — {T.short}</div>
       <p className="text-sm mb-4" style={{ color: "var(--muted)" }}>{T.exam.n} questions · {T.exam.min} minutes · weighted to the blueprint. Forms A/B/C are fixed (compare scores with teammates); Random samples fresh.</p>
       <div className="flex gap-2">{["A", "B", "C", "R"].map((f) => <button key={f} className="btn btn-mark" onClick={() => start(f)}>{f === "R" ? "Random" : `Form ${f}`}</button>)}</div>
@@ -55,7 +58,7 @@ function ExamInner() {
   if (phase === "done" && result) {
     const passed = result.pct >= 70;
     return (
-      <div><Header email={email} />
+      <div><Header email={email} admin={adminF} />
         <div className="card text-center mb-4" style={{ border: `2px solid ${passed ? "var(--pine)" : "var(--red)"}` }}>
           <div className="display" style={{ fontSize: 44, color: passed ? "var(--pine)" : "var(--red)" }}>{result.pct}%</div>
           <p style={{ color: "var(--muted)" }}>{result.score}/{result.total} · Form {result.form} · {passed ? "at or above the 70% study target" : "below the 70% study target"}</p>
@@ -75,7 +78,7 @@ function ExamInner() {
               <p className="font-medium">{q.q}</p>
               <p className="mt-1" style={{ color: "var(--red)" }}>Your answer: {ans[q.id] !== undefined ? q.opts[ans[q.id]] : "(blank)"}</p>
               <p style={{ color: "var(--pine)" }}>Correct: {q.opts[q.a]}</p>
-              <p className="mt-1" style={{ color: "var(--muted)", lineHeight: 1.5 }}>{q.why}</p>
+              <p className="mt-1" style={{ color: "var(--muted)", lineHeight: 1.5 }}>{q.why}{DOMAIN_DOCS[track]?.[q.d] && <span> · <a href={DOMAIN_DOCS[track][q.d].url} target="_blank" rel="noreferrer" style={{ color: "var(--blue)" }}>Docs: {DOMAIN_DOCS[track][q.d].label}</a></span>}</p>
             </div>
           ))}
           {qs.every((q) => ans[q.id] === q.a) && <p style={{ color: "var(--pine)" }}>Perfect score.</p>}
@@ -86,7 +89,7 @@ function ExamInner() {
   }
 
   const q = qs[idx];
-  if (!q) return <div><Header email={email} /></div>;
+  if (!q) return <div><Header email={email} admin={adminF} /></div>;
   const mm = String(Math.floor(left / 60)).padStart(2, "0"), ss = String(left % 60).padStart(2, "0");
   return (
     <div>

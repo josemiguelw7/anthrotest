@@ -7,8 +7,9 @@ import { Header, Mono, requireUser } from "@/components/ui";
 export default function TutorPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [adminF, setAdminF] = useState(false);
   const [msgs, setMsgs] = useState([]); const [input, setInput] = useState(""); const [busy, setBusy] = useState(false);
-  useEffect(() => { requireUser(router).then((me) => { if (me) setEmail(me.email); }); }, [router]);
+  useEffect(() => { requireUser(router).then((me) => { if (me) { setEmail(me.email); setAdminF(me.admin); } }); }, [router]);
   const send = async () => {
     if (!input.trim() || busy) return;
     const next = [...msgs, { role: "user", content: input.trim() }];
@@ -21,7 +22,7 @@ export default function TutorPage() {
     setBusy(false);
   };
   return (
-    <div><Header email={email} />
+    <div><Header email={email} admin={adminF} />
       <div className="display mb-1" style={{ fontSize: 22 }}>AI tutor</div>
       <p className="text-sm mb-4" style={{ color: "var(--muted)" }}>Ask anything about agents, MCP, Claude Code, prompting, caching…</p>
       <div className="card mb-3" style={{ minHeight: 260 }}>
