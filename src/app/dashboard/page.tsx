@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { TRACKS, BOOKING_URL } from "@/lib/tracks";
 import { Header, Mono, WeightSpine, requireUser } from "@/components/ui";
 import { pct } from "@/lib/helpers";
+import { PATH } from "@/lib/data/path";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -72,6 +73,7 @@ export default function Dashboard() {
           <span><Mono style={{ color: "var(--ink)", fontWeight: 600 }}>{pct(totC, totT) ?? "—"}%</Mono> accuracy</span>
           <span><Mono style={{ color: "var(--ink)", fontWeight: 600 }}>{trackExams[0] ? `${trackExams[0].pct}%` : "—"}</Mono> last mock</span>
           {data?.streak > 0 && <span>🔥 <Mono style={{ color: "var(--pine)", fontWeight: 600 }}>{data.streak}-day</Mono> streak</span>}
+          {data && <span>⏱ <Mono style={{ color: "var(--ink)", fontWeight: 600 }}>{Math.floor((data.timeTotal || 0) / 60)}h {(data.timeTotal || 0) % 60}m</Mono> total · <Mono style={{ fontWeight: 600 }}>{Math.floor((data.timeWeek || 0) / 60)}h {(data.timeWeek || 0) % 60}m</Mono> this week</span>}
         </div>
         {verdict && (
           <div className="mt-3 rounded-md p-3 text-sm flex items-center justify-between gap-3 flex-wrap" style={{ border: `1px solid ${verdict.color}`, background: "var(--paper)" }}>
@@ -83,6 +85,22 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+      {data && (data.pathDone ?? 0) < PATH.length && (
+        <div className="card mb-4">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div style={{ minWidth: 220, flex: 1 }}>
+              <b>{(data.pathDone ?? 0) === 0 ? "New to all this? Start with the learning path." : `Learning path: ${data.pathDone}/${PATH.length} units done.`}</b>
+              <div className="rounded h-2 w-full mt-2" style={{ background: "var(--paper)", border: "1px solid var(--line)" }}>
+                <div className="rounded h-full" style={{ width: `${((data.pathDone ?? 0) / PATH.length) * 100}%`, background: "var(--pine)", transition: "width .5s" }} />
+              </div>
+            </div>
+            <span className="flex gap-2">
+              {(data.pathDone ?? 0) === 0 && <Link href="/start" className="btn btn-ghost no-underline">1-min placement</Link>}
+              <Link href="/path" className="btn btn-primary no-underline">{(data.pathDone ?? 0) === 0 ? "Start path" : "Continue path"}</Link>
+            </span>
+          </div>
+        </div>
+      )}
       {data?.due > 0 && (
         <div className="card mb-4" style={{ background: "var(--mark-soft)", borderColor: "var(--mark-line)" }}>
           <div className="flex items-center justify-between">

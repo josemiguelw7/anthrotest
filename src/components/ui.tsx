@@ -1,5 +1,6 @@
 // @ts-nocheck
 "use client";
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -30,7 +31,14 @@ export function WeightSpine({ domains, per, height = 44 }) {
 export function Header({ email, admin }) {
   const path = usePathname();
   const router = useRouter();
-  const tabs = [["/dashboard", "Home"], ["/study", "Study"], ["/cards", "Cards"], ["/practice", "Drill"], ["/exam", "Exam"], ["/notebook", "Notebook"], ["/labs", "Labs"], ["/tutor", "Tutor"], ["/board", "Board"]];
+  useEffect(() => {
+    if (!email) return;
+    const beat = () => { if (document.visibilityState === "visible") fetch("/api/time", { method: "POST" }).catch(() => {}); };
+    beat();
+    const id = setInterval(beat, 60000);
+    return () => clearInterval(id);
+  }, [email]);
+  const tabs = [["/dashboard", "Home"], ["/path", "Path"], ["/study", "Study"], ["/glossary", "Glossary"], ["/cards", "Cards"], ["/practice", "Drill"], ["/exam", "Exam"], ["/notebook", "Notebook"], ["/labs", "Labs"], ["/tutor", "Tutor"], ["/board", "Board"]];
   if (admin) tabs.push(["/admin", "Admin"]);
   return (
     <div className="mb-6 pb-4" style={{ borderBottom: "2px solid var(--ink)" }}>

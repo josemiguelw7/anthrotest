@@ -4,6 +4,28 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TRACKS } from "@/lib/tracks";
 import { Header, Mono, requireUser } from "@/components/ui";
+import { Gloss } from "@/components/gloss";
+
+function NoteCard({ n }) {
+  const [fb, setFb] = useState("");
+  const [busy, setBusy] = useState(false);
+  const simpler = async () => {
+    if (busy) return; setBusy(true);
+    try {
+      const r = await fetch("/api/tutor", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: [{ role: "user", content: `Re-explain this study note for a total beginner in under 100 words. No jargon; define anything technical; one simple workplace analogy.\n\n${n.title}: ${n.body}` }] }) });
+      setFb((await r.json()).text);
+    } catch { setFb("Tutor unavailable — try again."); }
+    setBusy(false);
+  };
+  return (
+    <div className="card" style={{ padding: "1rem" }}>
+      <span className="font-semibold text-sm" style={{ background: "var(--mark-soft)", padding: "0 4px" }}>{n.title}</span>
+      <p className="text-sm mt-2" style={{ color: "#333e38", lineHeight: 1.55 }}><Gloss>{n.body}</Gloss></p>
+      {!fb && <button className="btn btn-ghost mt-2" style={{ padding: "1px 8px", fontSize: 12 }} onClick={simpler} disabled={busy}>{busy ? "…" : "Explain it simpler"}</button>}
+      {fb && <p className="text-sm mt-2 rounded-md p-3" style={{ background: "var(--blue-soft)", border: "1px solid #BFD4E6", lineHeight: 1.5 }}>{fb}</p>}
+    </div>
+  );
+}
 
 export default function Study() {
   const router = useRouter();
@@ -46,12 +68,7 @@ export default function Study() {
             <button onClick={() => speak(di)} className="btn ml-auto" style={{ border: `1px solid ${speaking === di ? "var(--pine)" : "var(--line)"}`, background: speaking === di ? "var(--green-soft)" : "transparent", color: speaking === di ? "var(--pine)" : "var(--muted)", padding: "2px 10px" }}>{speaking === di ? "■ Stop" : "▶ Listen"}</button>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            {T.notes.filter((n) => n.d === di).map((n) => (
-              <div key={n.title} className="card" style={{ padding: "1rem" }}>
-                <span className="font-semibold text-sm" style={{ background: "var(--mark-soft)", padding: "0 4px" }}>{n.title}</span>
-                <p className="text-sm mt-2" style={{ color: "#333e38", lineHeight: 1.55 }}>{n.body}</p>
-              </div>
-            ))}
+            {T.notes.filter((n) => n.d === di).map((n) => <NoteCard key={n.title} n={n} />)}
           </div>
         </div>
       ))}

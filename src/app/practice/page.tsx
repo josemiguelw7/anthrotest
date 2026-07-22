@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TRACKS, findQ, trackIn, DOMAIN_DOCS } from "@/lib/tracks";
 import { useBanks } from "@/lib/useBanks";
+import { Gloss } from "@/components/gloss";
 import { Header, Mono, requireUser } from "@/components/ui";
 import { shuffle, pct, DAY } from "@/lib/helpers";
 
@@ -19,7 +20,8 @@ function Tutor({ q, picked }) {
     setBusy(false);
   };
   const start = () => { setOpen(true); call([{ role: "user", content: `Practice question: "${q.q}"\nOptions: ${q.opts.map((o, i) => `${String.fromCharCode(65 + i)}. ${o}`).join(" | ")}\nCorrect: ${String.fromCharCode(65 + q.a)}. ${picked !== q.a ? `Student picked ${String.fromCharCode(65 + picked)}.` : "Student was correct."}\nExplain the concept and why wrong options tempt.` }]); };
-  if (!open) return <button className="btn btn-blue mt-3" onClick={start}>Ask the AI tutor</button>;
+  const eli5 = () => { setOpen(true); call([{ role: "user", content: `Explain this practice question and its correct answer to a total beginner. NO jargon — define any technical word you must use, keep it under 120 words, and use a simple workplace analogy.\nQuestion: "${q.q}"\nCorrect answer: ${q.opts[q.a]}` }]); };
+  if (!open) return <div className="mt-3 flex gap-2"><button className="btn btn-blue" onClick={start}>Ask the AI tutor</button><button className="btn btn-ghost" onClick={eli5}>Explain it simpler</button></div>;
   return (
     <div className="mt-3 rounded-md p-4" style={{ background: "var(--blue-soft)", border: "1px solid #BFD4E6" }}>
       <Mono style={{ fontSize: 11, color: "var(--blue)", fontWeight: 600 }}>AI TUTOR</Mono>
@@ -136,7 +138,7 @@ function PracticeInner() {
           })}
         </div>
         {picked !== null && (<>
-          <div className="mt-4 rounded-md p-4 text-sm" style={{ background: "var(--mark-soft)", border: "1px solid #E9D48A", lineHeight: 1.55 }}><b>{picked === q.a ? "Correct. " : "Not quite. "}</b>{q.why}{docs && <span> · <a href={docs.url} target="_blank" rel="noreferrer" style={{ color: "var(--blue)" }}>Docs: {docs.label}</a></span>}</div>
+          <div className="mt-4 rounded-md p-4 text-sm" style={{ background: "var(--mark-soft)", border: "1px solid #E9D48A", lineHeight: 1.55 }}><b>{picked === q.a ? "Correct. " : "Not quite. "}</b><Gloss>{q.why}</Gloss>{docs && <span> · <a href={docs.url} target="_blank" rel="noreferrer" style={{ color: "var(--blue)" }}>Docs: {docs.label}</a></span>}</div>
           <Tutor q={q} picked={picked} />
         </>)}
       </div>

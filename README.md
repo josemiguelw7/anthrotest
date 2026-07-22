@@ -64,6 +64,18 @@ Skip this and everything else still works — password resets then fall back to 
   Pearson VUE when you look ready. Exam registration itself runs through Anthropic Partner Academy.
 - **Question bank in Postgres**: admins add/edit questions at `/admin` (live instantly, no
   deploy); anyone can propose via `/submit`; the 85 built-ins stay in `src/lib/data/content.js`.
+- **Learning path** (`/path`): 5 beginner units (read -> listen -> 5-question checkpoint at 4/5
+  to unlock the next), progress bar on the dashboard. Content in `src/lib/data/path.js`.
+- **Glossary** (`/glossary`): 56 plain-English terms with analogies; the same terms are tappable
+  (dotted underline) inside explanations, notes, and path content — never inside live question
+  text, so definitions can't leak answers. Also available as a flashcard deck. Content in
+  `src/lib/data/glossary.js`.
+- **Placement** (`/start`): 6-question diagnostic that routes beginners to the path and veterans
+  to CCA-F drills. Doesn't touch stats.
+- **"Explain it simpler"**: jargon-free AI re-explanations on every practice question and study
+  note card.
+- **Time tracking**: a 1-minute heartbeat (visible tabs only) into `time_log`; dashboard shows
+  total and this-week hours. `path_progress` and `time_log` tables auto-create on first use.
 - **Access fencing** (optional): set `ALLOWED_EMAIL_DOMAINS` and/or `INVITE_CODE` to close
   registration to the team. Unset = open sign-ups.
 

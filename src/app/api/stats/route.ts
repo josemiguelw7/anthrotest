@@ -18,5 +18,14 @@ export async function GET() {
   let cursor = new Date(today);
   if (!set.has(cursor.toISOString().slice(0, 10))) cursor.setDate(cursor.getDate() - 1); // streak survives until end of today
   while (set.has(cursor.toISOString().slice(0, 10))) { streak++; cursor.setDate(cursor.getDate() - 1); }
-  return NextResponse.json({ agg, exams, due: due[0]?.n || 0, streak });
+  let timeTotal = 0, timeWeek = 0, pathDone = 0;
+  try {
+    const t = await sql`select coalesce(sum(minutes),0)::int as total, coalesce(sum(minutes) filter (where day > current_date - 7),0)::int as week from time_log where user_id = ${s.uid}`;
+    timeTotal = t[0].total; timeWeek = t[0].week;
+  } catch {}
+  try {
+    const pr = await sql`select count(*)::int as n from path_progress where user_id = ${s.uid} and passed`;
+    pathDone = pr[0].n;
+  } catch {}
+  return NextResponse.json({ agg, exams, due: due[0]?.n || 0, streak, timeTotal, timeWeek, pathDone });
 }

@@ -4,34 +4,44 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Header, Mono, requireUser } from "@/components/ui";
 import { TRACKS } from "@/lib/tracks";
+import { GLOSSARY } from "@/lib/data/glossary";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { shuffle } from "@/lib/helpers";
 
-export default function Cards() {
+function CardsInner() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [admin, setAdmin] = useState(false);
-  const [track, setTrack] = useState("arch");
+  const initialDeck = useSearchParams().get("deck") === "glossary" ? "glossary" : "arch";
+  const [track, setTrack] = useState(initialDeck);
   const [deck, setDeck] = useState(null);
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
-  const T = TRACKS[track];
+  const isGloss = track === "glossary";
+  const T = isGloss ? null : TRACKS[track];
 
   useEffect(() => { requireUser(router).then((me) => { if (me) { setEmail(me.email); setAdmin(me.admin); } }); }, [router]);
 
-  const start = () => { setDeck(shuffle(T.notes.map((n) => ({ ...n, dom: T.domains[n.d] })))); setIdx(0); setFlipped(false); };
+  const start = () => {
+    const cards = isGloss
+      ? GLOSSARY.map((g) => ({ title: g.t, body: g.d + " Think: " + g.a, dom: { code: "TERM", name: "Glossary" } }))
+      : T.notes.map((n) => ({ ...n, dom: T.domains[n.d] }));
+    setDeck(shuffle(cards)); setIdx(0); setFlipped(false);
+  };
   const card = deck?.[idx];
 
   return (
     <div><Header email={email} admin={admin} />
       <div className="flex gap-1 mb-4">
-        {Object.entries(TRACKS).map(([k, tr]) => (
-          <button key={k} onClick={() => { setTrack(k); setDeck(null); }} className="btn" style={{ background: track === k ? "var(--ink)" : "transparent", color: track === k ? "#fff" : "var(--muted)", border: `1px solid ${track === k ? "var(--ink)" : "var(--line)"}` }}>{tr.short}</button>
+        {[...Object.entries(TRACKS).map(([k, tr]) => [k, tr.short]), ["glossary", "Glossary terms"]].map(([k, label]) => (
+          <button key={k} onClick={() => { setTrack(k); setDeck(null); }} className="btn" style={{ background: track === k ? "var(--ink)" : "transparent", color: track === k ? "#fff" : "var(--muted)", border: `1px solid ${track === k ? "var(--ink)" : "var(--line)"}` }}>{label}</button>
         ))}
       </div>
       {!deck && (
         <div className="card text-center p-8">
-          <div className="display" style={{ fontSize: 24 }}>Flashcards — {T.short}</div>
-          <p className="mt-2 mb-4" style={{ color: "var(--muted)" }}>{T.notes.length} cards, shuffled. Tap to flip, swipe through in stolen minutes.</p>
+          <div className="display" style={{ fontSize: 24 }}>Flashcards — {isGloss ? "Glossary" : T.short}</div>
+          <p className="mt-2 mb-4" style={{ color: "var(--muted)" }}>{isGloss ? GLOSSARY.length : T.notes.length} cards, shuffled. Tap to flip, swipe through in stolen minutes.</p>
           <button className="btn btn-primary" onClick={start}>Start deck</button>
         </div>
       )}
@@ -58,3 +68,5 @@ export default function Cards() {
     </div>
   );
 }
+
+export default function Cards() { return <Suspense><CardsInner /></Suspense>; }
